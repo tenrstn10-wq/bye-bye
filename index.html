@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aesthetic Video Sync</title>
+  <style>
+    /* Google Fonts: Caveat & Syne */
+    @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Syne:wght@800&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #050505;
+      font-family: 'Caveat', cursive, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+      color: #fff;
+    }
+
+    #startOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #startOverlay p {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.2rem;
+      letter-spacing: 3px;
+      color: #fff;
+      text-transform: uppercase;
+      animation: pulse 1.5s infinite;
+      pointer-events: none;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.4; }
+      50% { opacity: 1; }
+      100% { opacity: 0.4; }
+    }
+
+    .slideshow-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #000;
+      overflow: hidden;
+    }
+
+    .bg-video {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: translate(-50%, -50%) scale(1);
+      transition: filter 0.5s ease, transform 0.6s ease-out;
+      z-index: 1;
+      opacity: 0.65;
+      filter: none;
+    }
+
+    /* Variasi Efek CSS */
+    .effect-normal { filter: none; transform: translate(-50%, -50%) scale(1); }
+    .effect-zoom { filter: brightness(1.15) contrast(1.1); transform: translate(-50%, -50%) scale(1.12); }
+    .effect-vibrant { filter: saturate(2.2) contrast(1.15) brightness(1.05); transform: translate(-50%, -50%) scale(1.05); }
+    .effect-dreamy { filter: blur(2px) brightness(1.2) saturate(1.3); transform: translate(-50%, -50%) scale(1.08); }
+    .effect-slowmo { filter: brightness(1.2) saturate(1.4); transform: translate(-50%, -50%) scale(1.18); }
+    .effect-warm { filter: sepia(0.4) saturate(1.7) contrast(1.1); transform: translate(-50%, -50%) scale(1); }
+
+    .effect-pulse {
+      filter: brightness(1.3) contrast(1.2);
+      animation: zoomPulse 0.4s ease-in-out infinite alternate;
+    }
+
+    @keyframes zoomPulse {
+      0% { transform: translate(-50%, -50%) scale(1.05); }
+      100% { transform: translate(-50%, -50%) scale(1.22); }
+    }
+
+    .grain-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.7) 100%);
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    .flash-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #fff;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 6;
+      transition: opacity 0.08s ease-out;
+    }
+
+    .lyrics-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 88%;
+      max-width: 750px;
+      text-align: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    /* TEKS LIRIK: Font Caveat (Aesthetic Handwriting) */
+    .lyric-text {
+      position: relative;
+      font-family: 'Caveat', cursive;
+      font-size: 3.2rem;
+      font-weight: 700;
+      color: #ffffff;
+      text-shadow: 
+        0 0 10px rgba(255, 255, 255, 0.8),
+        0 4px 15px rgba(0, 0, 0, 0.95);
+      line-height: 1.2;
+      display: inline-block;
+      opacity: 0;
+      transition: opacity 0.2s ease, transform 0.3s ease;
+    }
+
+    .lyric-text.show {
+      opacity: 1;
+    }
+
+    /* SLOWMO LIRIK: Font Syne (Bold Modern) */
+    .lyric-text.slowmo-lyric {
+      font-family: 'Syne', sans-serif;
+      font-size: 2.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      text-shadow: 
+        0 0 20px rgba(255, 255, 255, 1),
+        0 4px 20px rgba(0, 0, 0, 0.95);
+    }
+
+    .lyric-text.glitching::before,
+    .lyric-text.glitching::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      clip: rect(0, 0, 0, 0);
+    }
+
+    .lyric-text.glitching::before {
+      left: -3px;
+      text-shadow: -2px 0 #ff0055;
+      animation: glitch-anim-1 0.25s infinite linear alternate-reverse;
+    }
+
+    .lyric-text.glitching::after {
+      left: 3px;
+      text-shadow: 2px 0 #00ffff;
+      animation: glitch-anim-2 0.25s infinite linear alternate-reverse;
+    }
+
+    @keyframes glitch-anim-1 {
+      0% { clip: rect(10px, 9999px, 30px, 0); transform: skew(0.3deg); }
+      20% { clip: rect(40px, 9999px, 10px, 0); transform: skew(-0.5deg) translateX(-2px); }
+      40% { clip: rect(25px, 9999px, 50px, 0); transform: skew(0.8deg); }
+      60% { clip: rect(5px, 9999px, 20px, 0); transform: skew(-0.2deg) translateX(3px); }
+      80% { clip: rect(30px, 9999px, 45px, 0); transform: skew(0.4deg); }
+      100% { clip: rect(15px, 9999px, 35px, 0); transform: skew(-0.6deg); }
+    }
+
+    @keyframes glitch-anim-2 {
+      0% { clip: rect(35px, 9999px, 15px, 0); transform: skew(-0.4deg); }
+      20% { clip: rect(15px, 9999px, 45px, 0); transform: skew(0.6deg) translateX(2px); }
+      40% { clip: rect(50px, 9999px, 20px, 0); transform: skew(-0.3deg); }
+      60% { clip: rect(20px, 9999px, 5px, 0); transform: skew(0.5deg) translateX(-3px); }
+      80% { clip: rect(40px, 9999px, 25px, 0); transform: skew(-0.2deg); }
+      100% { clip: rect(10px, 9999px, 40px, 0); transform: skew(0.7deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="startOverlay" onclick="startEverything()">
+    <p>♡</p>
+  </div>
+
+  <div class="slideshow-container" id="container">
+    <video autoplay muted playsinline class="bg-video effect-normal" id="bgVideo">
+      <source src="bg.mp4" type="video/mp4">
+    </video>
+
+    <div class="grain-overlay"></div>
+    <div class="flash-bg" id="flashBg"></div>
+
+    <div class="lyrics-container">
+      <span class="lyric-text" id="lyricText" data-text=""></span>
+    </div>
+  </div>
+
+  <audio id="bgMusic" loop preload="auto">
+    <source src="bye.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    const lyricsData = [
+      { time: 0.6, text: "So I grab my stuff", flash: false, effect: "effect-zoom", slowmo: false },
+      { time: 2.8, text: "Courtney just pulled up", flash: true, effect: "effect-vibrant", slowmo: false },
+      { time: 4.8, text: "In the driveway", flash: false, effect: "effect-warm", slowmo: false },
+      { time: 7.6, text: "It's time", flash: true, effect: "effect-pulse", slowmo: false },
+      { time: 10.4, text: "Bye bye", flash: true, effect: "effect-slowmo", slowmo: true },
+      { time: 13.1, text: "Boy bye", flash: false, effect: "effect-zoom", slowmo: false },
+      { time: 15.4, text: "Bye bye", flash: true, effect: "effect-slowmo", slowmo: true },
+      { time: 17.1, text: "It's over, it's over, oh, yeah", flash: true, effect: "effect-dreamy", slowmo: false },
+      { time: 20.4, text: "Bye bye", flash: true, effect: "effect-slowmo", slowmo: true },
+      { time: 21.6, text: "I'm takin' what's mine", flash: false, effect: "effect-warm", slowmo: false },
+      { time: 24.6, text: "Bye bye", flash: true, effect: "effect-slowmo", slowmo: true },
+      { time: 26.1, text: "It's over, it's over, oh, yeah", flash: true, effect: "effect-vibrant", slowmo: false }
+    ];
+
+    const bgMusic = document.getElementById('bgMusic');
+    const bgVideo = document.getElementById('bgVideo');
+    const lyricText = document.getElementById('lyricText');
+    const flashBg = document.getElementById('flashBg');
+    const startOverlay = document.getElementById('startOverlay');
+
+    let lastActiveIndex = -1;
+    let isStarted = false;
+
+    function triggerFlash() {
+      if (!flashBg) return;
+      flashBg.style.opacity = '0.85';
+      setTimeout(() => flashBg.style.opacity = '0', 90);
+    }
+
+    function applyVideoEffect(effectClass) {
+      bgVideo.className = "bg-video " + (effectClass || "effect-normal");
+    }
+
+    function triggerGlitch(newItem) {
+      lyricText.innerText = newItem.text;
+      lyricText.setAttribute('data-text', newItem.text);
+      lyricText.classList.add('show', 'glitching');
+
+      applyVideoEffect(newItem.effect);
+
+      if (newItem.slowmo) {
+        bgVideo.playbackRate = 0.4;
+        lyricText.classList.add('slowmo-lyric');
+      } else {
+        bgVideo.playbackRate = 1.0;
+        lyricText.classList.remove('slowmo-lyric');
+      }
+
+      setTimeout(() => lyricText.classList.remove('glitching'), 250);
+    }
+
+    function checkLyricsSync() {
+      const currentTime = bgMusic.currentTime;
+      let activeIndex = -1;
+
+      if (currentTime < 0.3) {
+        lastActiveIndex = -1;
+      }
+
+      for (let i = 0; i < lyricsData.length; i++) {
+        if (currentTime >= lyricsData[i].time) {
+          activeIndex = i;
+        }
+      }
+
+      if (activeIndex !== lastActiveIndex) {
+        lastActiveIndex = activeIndex;
+
+        if (activeIndex !== -1) {
+          const currentItem = lyricsData[activeIndex];
+          triggerGlitch(currentItem);
+          if (currentItem.flash) triggerFlash();
+        } else {
+          lyricText.classList.remove('show', 'glitching', 'slowmo-lyric');
+          bgVideo.playbackRate = 1.0;
+          applyVideoEffect("effect-normal");
+        }
+      }
+    }
+
+    function startEverything() {
+      if (isStarted) return;
+      isStarted = true;
+
+      if (startOverlay) {
+        startOverlay.style.display = 'none';
+      }
+
+      bgVideo.play();
+      bgMusic.play().then(() => {
+        bgMusic.addEventListener('timeupdate', checkLyricsSync);
+      }).catch(() => {
+        bgMusic.load();
+        bgMusic.play().then(() => {
+          bgMusic.addEventListener('timeupdate', checkLyricsSync);
+        });
+      });
+    }
+
+    bgVideo.addEventListener('ended', () => {
+      bgVideo.currentTime = 0;
+      bgVideo.play();
+    });
+
+    bgMusic.addEventListener('ended', () => {
+      bgVideo.currentTime = 0;
+      bgVideo.playbackRate = 1.0;
+      applyVideoEffect("effect-normal");
+    });
+  </script>
+</body>
+</html>
